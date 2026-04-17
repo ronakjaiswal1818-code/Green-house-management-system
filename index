@@ -12,7 +12,7 @@
 
     <h1 class="text-4xl font-bold text-center mb-10 text-green-700">Greenhouse Management System</h1>
                     <div class="product-image">
-                      <img src="img/illustration-automated-greenhouse-controlled-by-iot-technology-greenhouse-is-equipped-with-sensors-that-monitor-temperature-humidity-light-levels-adjusting-environment_996093-1168.avif"  >
+                      <img src="illustration-automated-greenhouse-controlled-by-iot-technology-greenhouse-is-equipped-with-sensors-that-monitor-temperature-humidity-light-levels-adjusting-environment_996093-1168.avif"  >
                     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
