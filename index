@@ -10,30 +10,32 @@
 </head>
 <body class="bg-green-50 text-green-900 font-sans p-6">
 
-    <h1 class="text-4xl font-bold text-center mb-10 text-green-700">Greenhouse Management System</h1>
+    <div id="app-container" class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-10 text-green-700">Greenhouse Management System</h1>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <div class="bg-white p-6 rounded-2xl shadow-lg border border-green-100">
-            <canvas id="tempChart"></canvas>
-            <p class="text-center mt-2 font-semibold">Temperature (°C)</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-green-100">
+                <canvas id="tempChart"></canvas>
+                <p class="text-center mt-2 font-semibold">Temperature (°C)</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-green-100">
+                <canvas id="humChart"></canvas>
+                <p class="text-center mt-2 font-semibold">Soil Humidity (%)</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-green-100">
+                <canvas id="ldrChart"></canvas>
+                <p class="text-center mt-2 font-semibold">Light (LDR)</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-green-100">
+                <canvas id="mq135Chart"></canvas>
+                <p class="text-center mt-2 font-semibold">Air Quality (PPM)</p>
+            </div>
         </div>
-        <div class="bg-white p-6 rounded-2xl shadow-lg border border-green-100">
-            <canvas id="humChart"></canvas>
-            <p class="text-center mt-2 font-semibold">Soil Humidity (%)</p>
-        </div>
-        <div class="bg-white p-6 rounded-2xl shadow-lg border border-green-100">
-            <canvas id="ldrChart"></canvas>
-            <p class="text-center mt-2 font-semibold">Light (LDR)</p>
-        </div>
-        <div class="bg-white p-6 rounded-2xl shadow-lg border border-green-100">
-            <canvas id="mq135Chart"></canvas>
-            <p class="text-center mt-2 font-semibold">Air Quality (PPM)</p>
-        </div>
-    </div>
 
-    <div class="flex justify-center gap-6">
-        <button onclick="publish('cmd/pumps', 'TOGGLE')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full shadow-xl transition">Toggle Pumps</button>
-        <button onclick="publish('cmd/fan', 'TOGGLE')" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-xl transition">Toggle Fan</button>
+        <div class="flex justify-center gap-6">
+            <button onclick="publish('cmd/pumps', 'TOGGLE')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full shadow-xl transition">Toggle Pumps</button>
+            <button onclick="publish('cmd/fan', 'TOGGLE')" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-xl transition">Toggle Fan</button>
+        </div>
     </div>
 
     <script src="script.js"></script>
