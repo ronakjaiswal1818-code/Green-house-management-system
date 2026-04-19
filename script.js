@@ -1,7 +1,8 @@
 let client;
 
 window.addEventListener('DOMContentLoaded', () => {
-    // 1. Create Charts with a modern glass look
+    // 1. CHART INITIALIZATION
+    // Optimized for the 12-bit ADC of ESP32 (0-4095) and standard sensors
     const createChart = (id) => new Chart(document.getElementById(id), {
         type: 'doughnut',
         data: { 
@@ -14,7 +15,7 @@ window.addEventListener('DOMContentLoaded', () => {
         options: { 
             cutout: '75%', 
             plugins: { 
-                tooltip: { enabled: false }, 
+                tooltip: { enabled: true }, 
                 legend: { display: false } 
             },
             responsive: true,
@@ -22,64 +23,74 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Initializing all charts
     const tempChart = createChart('tempChart');
     const humChart = createChart('humChart');
+    const soilChart = createChart('soilChart');
     const ldrChart = createChart('ldrChart');
     const mq135Chart = createChart('mq135Chart');
 
-    // 2. Setup MQTT Client for EMQX Broker
-    // Port 8083 is the standard WebSocket port for EMQX
-    client = new Paho.MQTT.Client("broker.emqx.io", 8083, "web_client_" + Math.random());
+    // 2. MQTT SETUP (EMQX Broker)
+    // Random client ID to prevent connection drops
+    client = new Paho.MQTT.Client("broker.emqx.io", 8083, "web_dash_" + Math.random().toString(16).substr(2, 5));
 
     const connectOptions = {
-        useSSL: false, // Set to true if your GitHub page is forced to HTTPS and the broker supports it
-        onSuccess: onConnect,
-        onFailure: (err) => console.log("Connection Failed: ", err)
+        useSSL: false,
+        onSuccess: () => {
+            console.log("Dashboard Connected to EMQX");
+            client.subscribe("greenhouse/data");
+        },
+        onFailure: (err) => {
+            console.log("Connection Failed: ", err);
+        }
     };
 
     client.connect(connectOptions);
 
-    function onConnect() {
-        console.log("Connected to EMQX Broker");
-        // Subscribe to sensor data from ESP32
-        client.subscribe("greenhouse/data");
-    }
-
+    // 3. MESSAGE ARRIVAL LOGIC
     client.onMessageArrived = (msg) => {
         try {
             const data = JSON.parse(msg.payloadString);
-            console.log("Data Received:", data);
             
-            // Update charts with incoming sensor values
-            updateChart(tempChart, data.temp, 50); // Assuming 50C max
-            updateChart(humChart, data.hum, 100);  // 100% max
-            updateChart(ldrChart, data.ldr, 1024); // 10-bit sensor max
-            updateChart(mq135Chart, data.mq135, 1000); // Typical Air Quality max
+            // Handle Data from Node 1 (DHT22 & Soil)
+            if (data.temp !== undefined) {
+                updateChart(tempChart, data.temp, 50); // Max 50°C
+                updateChart(humChart, data.hum, 100);  // Max 100%
+                updateChart(soilChart, data.soil, 4095); // Max ADC Value
+                
+                // Optional: Update text values if IDs exist in HTML
+                if(document.getElementById('tempText')) document.getElementById('tempText').innerText = data.temp + "°C";
+                if(document.getElementById('soilText')) document.getElementById('soilText').innerText = data.soil;
+            }
             
-            // Update numeric text on dashboard if you have spans with these IDs
-            if(document.getElementById('tempVal')) document.getElementById('tempVal').innerText = data.temp.toFixed(1);
-            if(document.getElementById('humVal')) document.getElementById('humVal').innerText = data.hum.toFixed(1);
+            // Handle Data from Node 2 (LDR & MQ135)
+            if (data.ldr !== undefined) {
+                updateChart(ldrChart, data.ldr, 4095); 
+                updateChart(mq135Chart, data.mq135, 4095);
+            }
+
         } catch (e) {
-            console.error("Error parsing JSON:", e);
+            console.error("Data Error:", e);
         }
     };
 
     function updateChart(chart, value, max) {
-        // Calculate percentage for doughnut display
-        const val = Math.min(value, max);
-        chart.data.datasets[0].data = [val, max - val];
+        // Ensure value doesn't exceed chart bounds
+        const safeVal = Math.min(Math.max(value, 0), max);
+        chart.data.datasets[0].data = [safeVal, max - safeVal];
         chart.update();
     }
 });
 
-// 3. Function to send commands to ESP32 (Fan/Pump)
+// 4. ACTUATOR COMMANDS (Fan & Pump)
+// This matches your request for "Fan" and "Pump" labels
 function publish(topic, msg) {
     if (client && client.isConnected()) {
         const message = new Paho.MQTT.Message(msg);
         message.destinationName = topic;
         client.send(message);
-        console.log(`Published: ${msg} to ${topic}`);
+        console.log("Command Sent to " + topic + ": " + msg);
     } else {
-        console.error("MQTT Client not connected");
+        console.log("MQTT Not Connected");
     }
 }
