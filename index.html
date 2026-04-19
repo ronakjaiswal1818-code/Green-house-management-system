@@ -10,7 +10,6 @@
     
     <style>
         body {
-            /* Renamed your file to greenhouse.jpg for best compatibility */
             background-image: url('greenhouse.jpg');
             background-size: cover;
             background-position: center;
@@ -19,44 +18,75 @@
             min-height: 100vh;
         }
         .glass {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+        .glass:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.25);
         }
     </style>
 </head>
 <body class="p-6">
 
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w-7xl mx-auto">
         <header class="mb-10 text-center">
-            <h1 class="text-5xl font-extrabold text-black drop-shadow-md">Green House Management System</h1>
-            <p class="text-black/80 mt-2">Real-time IoT Monitoring </p>
+            <h1 class="text-5xl font-extrabold text-white drop-shadow-lg">Green House Management System</h1>
+            <p class="text-white/90 mt-2 text-lg font-medium">Real-time IoT Monitoring & Control</p>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <div class="glass p-6 rounded-3xl text-white shadow-xl">
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12">
+            
+            <div class="glass p-6 rounded-3xl text-white shadow-xl flex flex-col items-center">
                 <canvas id="tempChart"></canvas>
                 <p class="text-center mt-4 font-bold tracking-wider">TEMP (°C)</p>
             </div>
-            <div class="glass p-6 rounded-3xl text-white shadow-xl">
+
+            <div class="glass p-6 rounded-3xl text-white shadow-xl flex flex-col items-center">
                 <canvas id="humChart"></canvas>
                 <p class="text-center mt-4 font-bold tracking-wider">HUMIDITY (%)</p>
             </div>
-            <div class="glass p-6 rounded-3xl text-white shadow-xl">
+
+            <div class="glass p-6 rounded-3xl text-white shadow-xl flex flex-col items-center">
+                <canvas id="soilChart"></canvas>
+                <p class="text-center mt-4 font-bold tracking-wider">SOIL MOISTURE</p>
+            </div>
+
+            <div class="glass p-6 rounded-3xl text-white shadow-xl flex flex-col items-center">
                 <canvas id="ldrChart"></canvas>
                 <p class="text-center mt-4 font-bold tracking-wider">LIGHT (LDR)</p>
             </div>
-            <div class="glass p-6 rounded-3xl text-white shadow-xl">
+
+            <div class="glass p-6 rounded-3xl text-white shadow-xl flex flex-col items-center">
                 <canvas id="mq135Chart"></canvas>
                 <p class="text-center mt-4 font-bold tracking-wider">AIR QUALITY</p>
             </div>
+            
         </div>
 
-        <div class="flex justify-center gap-8">
-            <button onclick="publish('cmd/pumps', 'TOGGLE')" class="bg-blue-600/80 hover:bg-blue-600 text-white font-bold py-4 px-10 rounded-full shadow-2xl backdrop-blur-md transition-all transform hover:scale-105">Pumps</button>
-            <button onclick="publish('cmd/fan', 'TOGGLE')" class="bg-orange-500/80 hover:bg-orange-500 text-white font-bold py-4 px-10 rounded-full shadow-2xl backdrop-blur-md transition-all transform hover:scale-105">Fan</button>
+        <div class="flex flex-col items-center gap-6">
+            <h2 class="text-2xl font-bold text-white mb-2">Manual Controls</h2>
+            <div class="flex justify-center gap-8">
+                <button onclick="publish('cmd/pumps', 'TOGGLE')" 
+                        class="bg-blue-600/70 hover:bg-blue-600 text-white font-bold py-5 px-14 rounded-2xl shadow-2xl backdrop-blur-md transition-all transform hover:scale-110 active:scale-95 border border-white/30">
+                    Pump
+                </button>
+                
+                <button onclick="publish('cmd/fan', 'TOGGLE')" 
+                        class="bg-orange-500/70 hover:bg-orange-500 text-white font-bold py-5 px-14 rounded-2xl shadow-2xl backdrop-blur-md transition-all transform hover:scale-110 active:scale-95 border border-white/30">
+                    Fan
+                </button>
+            </div>
         </div>
+        
+        <footer class="mt-16 text-center">
+            <div id="status-box" class="inline-block px-4 py-2 rounded-full glass text-xs font-bold text-white uppercase tracking-widest">
+                MQTT Status: <span id="connStatus" class="text-yellow-400">Connecting...</span>
+            </div>
+        </footer>
     </div>
 
     <script src="script.js"></script>
