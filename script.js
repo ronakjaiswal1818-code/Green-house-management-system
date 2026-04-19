@@ -1,63 +1,57 @@
 let client;
 
 window.addEventListener('DOMContentLoaded', () => {
-    // 1. MQTT SETTINGS (SECURE WSS FOR GITHUB)
-    const broker = "broker.emqx.io";
-    const port = 8084; 
-    const clientID = "agrobot_web_" + Math.random().toString(16).substr(2, 8);
+    client = new Paho.MQTT.Client("broker.emqx.io", 8084, "agrobot_" + Math.random().toString(16).substr(2, 8));
 
-    client = new Paho.MQTT.Client(broker, port, clientID);
-
-    const connectOptions = {
-        useSSL: true, // MUST BE TRUE
+    const options = {
+        useSSL: true,
         onSuccess: () => {
-            console.log("Connected Successfully");
-            const statusBox = document.getElementById("connStatus");
-            statusBox.innerText = "ONLINE";
-            statusBox.style.color = "#4ade80"; // Neon Green
+            document.getElementById("connStatus").innerText = "ONLINE";
+            document.getElementById("connStatus").style.color = "#4ade80";
             client.subscribe("greenhouse/data");
+            client.subscribe("greenhouse/status");
         },
-        onFailure: (err) => {
-            console.error("MQTT Failed", err);
-            const statusBox = document.getElementById("connStatus");
-            statusBox.innerText = "OFFLINE";
-            statusBox.style.color = "#f87171"; // Red
-        }
+        onFailure: (err) => { document.getElementById("connStatus").innerText = "OFFLINE"; }
     };
 
-    // 2. DATA HANDLER
     client.onMessageArrived = (msg) => {
-        try {
-            const data = JSON.parse(msg.payloadString);
-            
-            // Map JSON keys to HTML IDs
-            // Note: .toFixed(1) keeps 1 decimal place for floats
-            if (data.temp !== undefined) {
-                document.getElementById("val-temp").innerText = parseFloat(data.temp).toFixed(1);
-                document.getElementById("val-hum").innerText = parseFloat(data.hum).toFixed(1);
-                document.getElementById("val-soil").innerText = data.soil;
-            }
+        const topic = msg.destinationName;
+        const payload = msg.payloadString;
 
-            if (data.ldr !== undefined) {
-                document.getElementById("val-ldr").innerText = data.ldr;
-                document.getElementById("val-mq135").innerText = data.mq135;
-            }
-        } catch (e) {
-            console.error("Message Error:", e);
+        if (topic === "greenhouse/data") {
+            const data = JSON.parse(payload);
+            if(data.temp) document.getElementById("val-temp").innerText = parseFloat(data.temp).toFixed(1);
+            if(data.hum) document.getElementById("val-hum").innerText = parseFloat(data.hum).toFixed(1);
+            if(data.soil) document.getElementById("val-soil").innerText = data.soil;
+            if(data.ldr) document.getElementById("val-ldr").innerText = data.ldr;
+            if(data.mq135) document.getElementById("val-mq135").innerText = data.mq135;
+        }
+
+        if (topic === "greenhouse/status") {
+            const status = JSON.parse(payload);
+            updateUI("btn-pump", "stat-pump", status.pump, "bg-blue-600");
+            updateUI("btn-fan", "stat-fan", status.fan, "bg-orange-600");
         }
     };
-
-    client.connect(connectOptions);
+    client.connect(options);
 });
 
-// 3. ACTUATOR COMMAND PUBLISHER
+function updateUI(btnId, spanId, state, activeClass) {
+    const btn = document.getElementById(btnId);
+    const span = document.getElementById(spanId);
+    if (state === "ON") {
+        btn.classList.replace("glass", activeClass);
+        span.innerText = "ON";
+    } else {
+        btn.className = btn.className.replace(/bg-\w+-\d+/, "glass");
+        span.innerText = "OFF";
+    }
+}
+
 function publish(topic, msg) {
-    if (client && client.isConnected()) {
+    if (client.isConnected()) {
         const message = new Paho.MQTT.Message(msg);
         message.destinationName = topic;
         client.send(message);
-        console.log(`Action: ${topic} -> ${msg}`);
-    } else {
-        console.warn("Cannot publish, client disconnected");
     }
 }
