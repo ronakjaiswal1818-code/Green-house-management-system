@@ -6,87 +6,67 @@
     <title>Greenhouse Management System</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
-    
     <style>
         body {
             background-image: linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)), url('greenhouse.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            min-height: 100vh;
+            background-size: cover; background-position: center; background-attachment: fixed;
+            min-height: 100vh; font-family: sans-serif;
         }
         .glass {
             background: rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
         }
-        .sensor-value {
-            font-size: 3rem;
-            font-weight: 800;
-            font-family: 'Courier New', Courier, monospace; /* Monospaced for data look */
-        }
+        .sensor-value { font-size: 3rem; font-weight: 800; font-family: monospace; }
     </style>
 </head>
 <body class="p-6 text-white">
-
     <div class="max-w-7xl mx-auto">
         <header class="mb-10 text-center">
             <h1 class="text-5xl font-extrabold tracking-tighter uppercase">Green House Monitor</h1>
             <p class="text-green-400 mt-2 text-lg font-bold">IoT REAL-TIME ANALYTICS</p>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12">
-            
-            <div class="glass p-8 rounded-3xl shadow-2xl flex flex-col items-center border-b-4 border-blue-500">
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12 text-center">
+            <div class="glass p-8 rounded-3xl border-b-4 border-blue-500">
                 <span id="val-temp" class="sensor-value text-blue-400">--</span>
-                <p class="mt-2 text-xs font-black uppercase tracking-widest opacity-70">Temp (°C)</p>
+                <p class="mt-2 text-xs font-black uppercase opacity-70">Temp (°C)</p>
             </div>
-
-            <div class="glass p-8 rounded-3xl shadow-2xl flex flex-col items-center border-b-4 border-green-500">
+            <div class="glass p-8 rounded-3xl border-b-4 border-green-500">
                 <span id="val-hum" class="sensor-value text-green-400">--</span>
-                <p class="mt-2 text-xs font-black uppercase tracking-widest opacity-70">Humidity (%)</p>
+                <p class="mt-2 text-xs font-black uppercase opacity-70">Humidity (%)</p>
             </div>
-
-            <div class="glass p-8 rounded-3xl shadow-2xl flex flex-col items-center border-b-4 border-yellow-500">
+            <div class="glass p-8 rounded-3xl border-b-4 border-yellow-500">
                 <span id="val-soil" class="sensor-value text-yellow-500">--</span>
-                <p class="mt-2 text-xs font-black uppercase tracking-widest opacity-70">Soil (Raw)</p>
+                <p class="mt-2 text-xs font-black uppercase opacity-70">Soil (Raw)</p>
             </div>
-
-            <div class="glass p-8 rounded-3xl shadow-2xl flex flex-col items-center border-b-4 border-orange-500">
+            <div class="glass p-8 rounded-3xl border-b-4 border-orange-500">
                 <span id="val-ldr" class="sensor-value text-orange-400">--</span>
-                <p class="mt-2 text-xs font-black uppercase tracking-widest opacity-70">Light (Raw)</p>
+                <p class="mt-2 text-xs font-black uppercase opacity-70">Light (Raw)</p>
             </div>
-
-            <div class="glass p-8 rounded-3xl shadow-2xl flex flex-col items-center border-b-4 border-purple-500">
+            <div class="glass p-8 rounded-3xl border-b-4 border-purple-500">
                 <span id="val-mq135" class="sensor-value text-purple-400">--</span>
-                <p class="mt-2 text-xs font-black uppercase tracking-widest opacity-70">Air Quality</p>
+                <p class="mt-2 text-xs font-black uppercase opacity-70">Air Quality</p>
             </div>
-
         </div>
 
-        <div class="flex flex-col items-center gap-6">
-            <div class="flex justify-center gap-8">
-                <button onclick="publish('cmd/pumps', 'TOGGLE')" 
-                        class="bg-blue-600 hover:bg-blue-500 font-bold py-6 px-16 rounded-2xl shadow-2xl transition-all transform hover:-translate-y-1 border-b-4 border-blue-800 uppercase tracking-widest">
-                    Pump
-                </button>
-                <button onclick="publish('cmd/fan', 'TOGGLE')" 
-                        class="bg-orange-600 hover:bg-orange-500 font-bold py-6 px-16 rounded-2xl shadow-2xl transition-all transform hover:-translate-y-1 border-b-4 border-orange-800 uppercase tracking-widest">
-                    Fan
-                </button>
-            </div>
+        <div class="flex justify-center gap-8">
+            <button id="btn-pump" onclick="publish('cmd/pumps', 'TOGGLE')" 
+                    class="glass font-black py-6 px-12 rounded-2xl shadow-2xl transition-all border border-white/20 uppercase min-w-[220px]">
+                Pump: <span id="stat-pump">OFF</span>
+            </button>
+            <button id="btn-fan" onclick="publish('cmd/fan', 'TOGGLE')" 
+                    class="glass font-black py-6 px-12 rounded-2xl shadow-2xl transition-all border border-white/20 uppercase min-w-[220px]">
+                Fan: <span id="stat-fan">OFF</span>
+            </button>
         </div>
         
         <footer class="mt-16 text-center">
-            <div class="inline-block px-6 py-2 rounded-full glass text-xs font-bold uppercase tracking-widest">
-                Broker Connection: <span id="connStatus" class="text-yellow-500">CONNECTING...</span>
+            <div class="inline-block px-6 py-2 rounded-full glass text-xs font-bold uppercase">
+                Status: <span id="connStatus" class="text-yellow-500">CONNECTING...</span>
             </div>
         </footer>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
