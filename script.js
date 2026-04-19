@@ -1,6 +1,5 @@
 let client;
 
-// 1. Initialize Charts
 const createChart = (id) => {
     const ctx = document.getElementById(id);
     if (!ctx) return null;
@@ -15,86 +14,65 @@ const createChart = (id) => {
         },
         options: { 
             cutout: '75%', 
-            plugins: { legend: { display: false }, tooltip: { enabled: true } },
-            responsive: true,
-            maintainAspectRatio: true
+            plugins: { legend: { display: false } },
+            responsive: true
         }
     });
 };
 
 window.addEventListener('DOMContentLoaded', () => {
-    // Setup Charts
-    const tempChart = createChart('tempChart');
-    const humChart = createChart('humChart');
-    const soilChart = createChart('soilChart');
-    const ldrChart = createChart('ldrChart');
-    const mq135Chart = createChart('mq135Chart');
+    const charts = {
+        temp: createChart('tempChart'),
+        hum: createChart('humChart'),
+        soil: createChart('soilChart'),
+        ldr: createChart('ldrChart'),
+        mq135: createChart('mq135Chart')
+    };
 
-    // 2. MQTT Configuration
-    // GitHub Pages require HTTPS, so we use Port 8084 (Secure WebSockets)
-    const broker = "broker.emqx.io";
-    const port = 8084; 
-    const clientID = "web_client_" + Math.random().toString(16).substr(2, 8);
+    // SECURE CONNECTION FOR GITHUB PAGES
+    client = new Paho.MQTT.Client("broker.emqx.io", 8084, "client_" + Math.random().toString(16).substr(2, 8));
 
-    client = new Paho.MQTT.Client(broker, port, clientID);
-
-    const connectOptions = {
-        useSSL: true, // MANDATORY for GitHub Pages
-        timeout: 5,
-        keepAliveInterval: 60,
+    const options = {
+        useSSL: true, // Required for HTTPS
         onSuccess: () => {
-            console.log("Connected to EMQX Broker");
             document.getElementById("connStatus").innerText = "Online";
-            document.getElementById("connStatus").className = "text-green-400 font-bold";
+            document.getElementById("connStatus").style.color = "#4ade80";
             client.subscribe("greenhouse/data");
         },
         onFailure: (err) => {
-            console.error("Connection Failed:", err);
-            document.getElementById("connStatus").innerText = "Offline (Retry)";
-            document.getElementById("connStatus").className = "text-red-400 font-bold";
+            document.getElementById("connStatus").innerText = "Offline";
+            document.getElementById("connStatus").style.color = "#f87171";
+            console.log(err);
         }
     };
 
     client.onMessageArrived = (msg) => {
-        try {
-            const data = JSON.parse(msg.payloadString);
-            console.log("Data Received:", data);
-            
-            // Node 1 Processing
-            if (data.temp !== undefined) {
-                updateChart(tempChart, data.temp, 50);
-                updateChart(humChart, data.hum, 100);
-                updateChart(soilChart, data.soil, 4095);
-            }
-            
-            // Node 2 Processing
-            if (data.ldr !== undefined) {
-                updateChart(ldrChart, data.ldr, 4095);
-                updateChart(mq135Chart, data.mq135, 4095);
-            }
-        } catch (e) {
-            console.error("Error parsing MQTT message:", e);
+        const data = JSON.parse(msg.payloadString);
+        if (data.temp !== undefined) {
+            updateChart(charts.temp, data.temp, 50);
+            updateChart(charts.hum, data.hum, 100);
+            updateChart(charts.soil, data.soil, 4095);
+        }
+        if (data.ldr !== undefined) {
+            updateChart(charts.ldr, data.ldr, 4095);
+            updateChart(charts.mq135, data.mq135, 4095);
         }
     };
 
-    client.connect(connectOptions);
-
-    function updateChart(chart, value, max) {
-        if (!chart) return;
-        const val = Math.min(Math.max(value, 0), max);
-        chart.data.datasets[0].data = [val, max - val];
-        chart.update();
-    }
+    client.connect(options);
 });
 
-// 3. Actuator Control Function
+function updateChart(chart, value, max) {
+    if (!chart) return;
+    const val = Math.min(Math.max(value, 0), max);
+    chart.data.datasets[0].data = [val, max - val];
+    chart.update();
+}
+
 function publish(topic, msg) {
     if (client && client.isConnected()) {
         const message = new Paho.MQTT.Message(msg);
         message.destinationName = topic;
         client.send(message);
-        console.log(`Published to ${topic}: ${msg}`);
-    } else {
-        alert("Dashboard is not connected to the MQTT broker.");
     }
 }
