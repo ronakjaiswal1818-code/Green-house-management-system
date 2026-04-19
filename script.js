@@ -29,19 +29,19 @@ window.addEventListener('DOMContentLoaded', () => {
         mq135: createChart('mq135Chart')
     };
 
-    // SECURE CONNECTION FOR GITHUB PAGES
+    // SECURE SETTINGS FOR GITHUB PAGES
     client = new Paho.MQTT.Client("broker.emqx.io", 8084, "client_" + Math.random().toString(16).substr(2, 8));
 
     const options = {
-        useSSL: true, // Required for HTTPS
+        useSSL: true, // This fixes the Mixed Content Error
         onSuccess: () => {
-            document.getElementById("connStatus").innerText = "Online";
-            document.getElementById("connStatus").style.color = "#4ade80";
+            const status = document.getElementById("connStatus");
+            status.innerText = "ONLINE";
+            status.style.color = "#4ade80";
             client.subscribe("greenhouse/data");
         },
         onFailure: (err) => {
-            document.getElementById("connStatus").innerText = "Offline";
-            document.getElementById("connStatus").style.color = "#f87171";
+            document.getElementById("connStatus").innerText = "OFFLINE";
             console.log(err);
         }
     };
